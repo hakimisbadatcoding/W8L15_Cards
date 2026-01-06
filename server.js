@@ -1,11 +1,7 @@
-
 const express = require('express');
 const mysql = require('mysql2/promise');
 require('dotenv').config();
-const port = 3000;
-
-
-
+const port = process.env.PORT || 3000;
 
 const dbConfig = {
     host: process.env.DB_HOST,
@@ -20,32 +16,35 @@ const dbConfig = {
 const app = express();
 app.use(express.json());
 
-
+const pool = mysql.createPool(dbConfig);
 
 app.listen(port, () => {
-    console.log(`Server is running on `,port);
+    console.log(`Server is running on port ${port}`);
 });
 
-
 app.get('/allcards', async (req, res) => {
-try{
-    let connection = await mysql.createConnection(dbConfig);
-    const [rows] = await connection.execute('SELECT * FROM defaultdb.cards');
-    res.json(rows);
-} catch(err){
-    console.error(err);
-    res.status(500).json({message: 'Server error for allcards'});
-}});
+    let connection = await pool.getConnection();
+    try {
+        const [rows] = await connection.execute('SELECT * FROM cards');
+        res.json(rows);
+    } catch(err) {
+        console.error(err);
+        res.status(500).json({message: 'Server error for allcards'});
+    } finally {
+        connection.release();
+    }
+});
 
 app.post('/addcard', async (req, res) => {
     const { card_name, card_pic } = req.body;
+    let connection = await pool.getConnection();
     try {
-        let connection = await mysql.createConnection(dbConfig);
         await connection.execute('INSERT INTO cards (card_name, card_pic) VALUES (?, ?)', [card_name, card_pic]);
         res.status(201).json({ message: 'Card ' + card_name + ' added successfully' });
     } catch (err) {
         console.error(err);
         res.status(500).json({ message: 'Server error - could not add card ' + card_name });
+    } finally {
+        connection.release();
     }
 });
-
