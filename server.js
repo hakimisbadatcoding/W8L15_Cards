@@ -1,6 +1,6 @@
 
 const express = require('express');
-const mysql = required('mysql2/promise');
+const mysql = require('mysql2/promise');
 require('dotenv').config();
 const port = 3000;
 
@@ -48,3 +48,4 @@ app.post('/addcard', async (req, res) => {
         res.status(500).json({ message: 'Server error - could not add card ' + card_name });
     }
 });
+
